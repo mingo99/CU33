@@ -1,0 +1,7 @@
+data/*
+vivado/
+logs/
+*.txt
+*.log
+*.rc
+sim_filelist.f

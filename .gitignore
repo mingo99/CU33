@@ -1,7 +1,5 @@
 data/*
 vivado/
-logs/
-*.txt
-*.log
-*.rc
+sim/
+!sim/Makefile
 sim_filelist.f

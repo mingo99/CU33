@@ -8,9 +8,10 @@ DVE := dve -full64
 
 # Define the top level module
 TOP_LEVEL_MODULE := tb_conv2d_3x3
+# TOP_LEVEL_MODULE := tb_test
 
 # Simulation Timescale
-TIMESCALE := timescale=1ns/1ps
+TIMESCALE := timescale=1ps/1ps
 
 # Define the source filelist
 FILELIST := ../src/filelist.tcl
@@ -37,6 +38,10 @@ sim:
 make_log_dir :
 	mkdir -p $(LOG_DIR)
 
+make_data_dir :
+	mkdir -p ../data/exp/
+	mkdir -p ../data/act/
+	
 clean: clean_com clean_sim clean_verdi clean_res clean_vivado 
 	rm -rf *.log logs/
 	rm -rf sim_filelist.f
@@ -68,5 +73,5 @@ open_verdi:
 compare:
 	@cd ../scripts/python && python compare.py
 
-gen_tb:
+gen_tb: make_data_dir
 	@cd ../scripts/python && python testbench_gen.py

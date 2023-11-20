@@ -44,7 +44,8 @@ module pea_ctrl #(
     wire [PC_COL_WIDTH-1:0] tile_col_offset_s1 = ofm_size[PC_COL_WIDTH-1:0];
     wire [PC_ROW_WIDTH_S2-1:0] tile_row_offset_s2 = ofm_size[PC_ROW_WIDTH_S2-1:0];
     wire [PC_COL_WIDTH_S2-1:0] tile_col_offset_s2 = ofm_size[PC_COL_WIDTH_S2-1:0];
-    wire [PC_COL_WIDTH-1:0] tile_col_offset = stride ? tile_col_offset_s2 << 1 : tile_col_offset_s1;
+    wire [PC_COL_WIDTH-1:0] tile_col_offset = stride ? (tile_col_offset_s2 << 1) : tile_col_offset_s1;
+    wire [PC_ROW_WIDTH-1:0] tile_row_offset = stride ? (tile_row_offset_s2 << 1) : tile_row_offset_s1;
 
     wire [TC_ROW_WIDTH-1:0] tc_row_max_s1 = |tile_row_offset_s1 ? ofm_size[FMS_WIDTH-1:PC_ROW_WIDTH] : ofm_size[FMS_WIDTH-1:PC_ROW_WIDTH]-1;
     wire [TC_COL_WIDTH-1:0] tc_col_max_s1 = |tile_col_offset_s1 ? ofm_size[FMS_WIDTH-1:PC_COL_WIDTH] : ofm_size[FMS_WIDTH-1:PC_COL_WIDTH]-1;
@@ -75,11 +76,14 @@ module pea_ctrl #(
         end
     end
 
+    wire [7:0] valid_mask;
+    assign valid_mask = tile_row_last & (|tile_row_offset) ? (8'hff >> (8 - tile_row_offset)) : 8'hff;
+
     reg [PC_COL_WIDTH-1:0] pc_col;
     wire [PC_COL_WIDTH-1:0] pc_col_max, pc_col_nxt;
 
     wire cnt_valid;
-    assign pc_col_max = (|tile_col_offset)&(tc_col==tc_col_max) ? tile_col_offset-1 : TILE_LEN-1;
+    assign pc_col_max = tile_col_last & (|tile_col_offset) ? tile_col_offset - 1 : TILE_LEN - 1;
     assign pc_col_nxt = ic_done ? 'b0 : pc_col + cnt_valid;
 
     always @(posedge clk or negedge rstn) begin
@@ -141,8 +145,7 @@ module pea_ctrl #(
         end
     end
 
-    always_comb begin
-        next_state = 3'bxxx;
+    always @(*) begin
         case (curr_state)
             IDLE: begin
                 if (start_conv) next_state = FLUSH;
@@ -199,7 +202,6 @@ module pea_ctrl #(
     assign oc_done = ic_last & ic_done;
     assign tile_done = oc_last & oc_done;
     assign tile_ver_done = tile_col_last & tile_done;
-    // reg []conv_done_reg;
     assign conv_done = tile_row_last & tile_ver_done;
 
 endmodule

@@ -24,23 +24,33 @@ module tb_conv2d_3x3;
     reg [32:0] wgt_cnt;
 
     /// Store weight and ifm
-    reg [ 7:0] ifm_in  [`IFM_LEN];
-    reg [ 7:0] wgt_in  [`WGT_LEN];
+    reg [7:0] ifm_in[`IFM_LEN];
+    reg [7:0] wgt_in[`WGT_LEN];
 
-    integer fp_w [`PEA33_COL];
+    integer fp_w[`PEA33_COL];
     sum_q sum_group[`PEA33_COL];
-    reg signed [`OFM_WIDTH-1:0] ofm[`CHO][`OFM_SIZE][`OFM_SIZE];
+
+    string ifm_file_name;
+    string wgt_file_name;
+
+    event conv_started;
+    event conv_ended;
 
     /// Ifm dispatcher
     initial begin
-        string ifm_file_name = $sformatf("../data/ifm_hex_c%0d_h%0d_w%0d.txt",`CHI,`IFM_SIZE,`IFM_SIZE);
+        ifm_file_name =
+            $sformatf("../data/exp/ifm_hex_c%0d_h%0d_w%0d.txt", `CHI, `IFM_SIZE, `IFM_SIZE);
         $readmemh(ifm_file_name, ifm_in);
     end
 
-    always_comb begin
-        if (!rstn) begin
-            ifm_group = 0;
-        end else if (ifm_read) begin
+    /// Wgt dispatcher
+    initial begin
+        wgt_file_name = $sformatf("../data/exp/weight_hex_co%0d_ci%0d_k3_k3.txt", `CHO, `CHI);
+        $readmemh(wgt_file_name, wgt_in);
+    end
+
+    always @(*) begin
+        if (ifm_read) begin
             ifm_group[7:0]   = ifm_in[ifm_cnt+0];
             ifm_group[15:8]  = ifm_in[ifm_cnt+1];
             ifm_group[23:16] = ifm_in[ifm_cnt+2];
@@ -61,16 +71,8 @@ module tb_conv2d_3x3;
         else ifm_cnt <= ifm_cnt;
     end
 
-    /// Wgt dispatcher
-    initial begin
-        string wgt_file_name = $sformatf("../data/weight_hex_co%0d_ci%0d_k3_k3.txt",`CHO,`CHI);
-        $readmemh(wgt_file_name, wgt_in);
-    end
-
-    always_comb begin
-        if (!rstn) begin
-            wgt_group = 0;
-        end else if (wgt_read) begin
+    always @(*) begin
+        if (wgt_read) begin
             wgt_group[7:0]   = wgt_in[wgt_cnt+0];
             wgt_group[15:8]  = wgt_in[wgt_cnt+1];
             wgt_group[23:16] = wgt_in[wgt_cnt+2];
@@ -83,50 +85,59 @@ module tb_conv2d_3x3;
         if (!rstn) wgt_cnt <= 0;
         else if (wgt_cnt == `WGT_LEN && !wgt_read) wgt_cnt <= 0;
         else if (wgt_read) wgt_cnt <= wgt_cnt + 3;
- else wgt_cnt <= wgt_cnt;
+        else wgt_cnt <= wgt_cnt;
     end
 
-task automatic get_sum();
-    for (int i = 0; i < `PEA33_COL; ++i) begin
-    automatic int col = i;
-    fork
-    @(posedge clk iff sum_valid[col]);
-    $display("valid is assert");
-    sum_group[col].push_back(sum[col]);
-    join_none
-    end
+    function static open_out_files();
+        string ofm_file_name;
+        for (int i = 0; i < `PEA33_COL; ++i) begin
+            ofm_file_name = $sformatf("../data/act/ofm_tile_lines_%0d.txt", i);
+            fp_w[i] = $fopen(ofm_file_name);
+        end
+    endfunction
+
+    task automatic get_sum();
+        $display("Start to get sum...");
+        for (int i = 0; i < `PEA33_COL; ++i) begin
+            fork
+                automatic int col = i;
+                forever begin
+                    @(posedge clk iff sum_valid[col]);
+                    sum_group[col].push_back(sum[col]);
+                end
+            join_none
+        end
     endtask
 
-    // function static write_ofm();
-    // for (int tr = 0; tr < `TILE_ROW; ++tr) begin
-    // for (int tc = 0; tc < `TILE_COL; ++tc) begin
-    // $fwrite(fp_w, "\n");
-    // for (int oc = 0; oc < `CHO; ++oc) begin
-    // $fwrite(fp_w, "\n");
-    // for (int ow = 0; ow < `TILE_RUN; ++ow) begin
-    // for (int oh = 0; oh < `TILE_LEN; ++oh) begin
-    // // ofm[oc][tr*`TILE_RUN+ow][tc*`TILE_LEN+oh] = sum_group[ow].pop_front();
-    // $fwrite(fp_w, "%d ", sum_group[ow].pop_front());
-    // if (oh == `TILE_LEN - 1) begin
-    // $fwrite(fp_w, "\n");
-    // end
-    // end
-    // end
-    // end
-    // end
-    // end
-    // $display("\033[32m[ConvKernel: ] Finish writing results to conv_acc_out.txt\033[0m");
-    // endfunction
-    //
+    task automatic write_ofm();
+        $display("Start to write sum...");
+        for (int i = 0; i < `PEA33_COL; ++i) begin
+            fork
+                automatic int col = i;
+                automatic int j = 0;
+                forever begin
+                    @(posedge clk);
+                    if (sum_group[col].size() != 0) begin
+                        $fwrite(fp_w[col], "%0d,", sum_group[col].pop_front());
+                        j = j + 1;
+                        if (j == `TILE_LEN) begin
+                            $fwrite(fp_w[col], "\n");
+                            j = 0;
+                        end
+                    end
+                end
+            join_none
+        end
+    endtask
+
     // generate clock
     initial begin
         clk = 1'b0;
-        #5 clk = 1'b1;
         forever #5 clk = ~clk;
     end
+
     /// reset and other control signal from master side
     initial begin
-        // fp_w       = $fopen("conv_acc_out.txt");
         rstn       = 1;
         start_conv = 0;
         cfg_ci     = `CHN_64;
@@ -135,24 +146,33 @@ task automatic get_sum();
         #10 rstn = 0;
         #10 rstn = 1;
 
-        $display(`CHI, `CHO);
-        $display(`TILE_ROW, `TILE_COL);
+        $display("InChannel num: %0d,  OutChannel num: %0d", `CHI, `CHO);
+        $display("IFM size: %0d, OFM size: %0d", `IFM_SIZE, `OFM_SIZE);
+        $display("Tile row: %0d, Tile col: %0d", `TILE_ROW, `TILE_COL);
         $display(`IFM_LEN, `WGT_LEN);
+
         #10 @(posedge clk) start_conv <= 1;
         #10 @(posedge clk) start_conv <= 0;
-        // #10 start_conv = 0;
+
         $display("\n\033[32m[ConvKernel: ] Set the clock period to 10ns\033[0m");
         $display("\033[32m[ConvKernel: ] Start to compute conv\033[0m");
-        while(!conv_done) @(posedge clk);
+
+        ->conv_started;
+        while (!conv_done) @(posedge clk);
+
+        #1000;
         $display("\033[32m Finish computing \033[0m");
         $finish();
     end
 
-    // initial begin
-    // forever begin
-    // get_sum();
-    // end
-    // end
+    initial begin
+        @conv_started;
+        open_out_files();
+        fork
+            get_sum();
+            write_ofm();
+        join
+    end
 
     // extract wave information
     initial begin

@@ -15,7 +15,7 @@
 `define CHN_2048 32
 `define CHN_WIDTH 6
 // `define CHN_OFT_WIDTH 6
-`define CHN_OFT_WIDTH 3
+`define CHN_OFT_WIDTH 5
 
 `define FMS_WIDTH 8
 `define OFM_WIDTH 32
@@ -23,7 +23,7 @@
 // For simulation
 `define CHI (`CHN_64<<`CHN_OFT_WIDTH)
 `define CHO (`CHN_64<<`CHN_OFT_WIDTH)
-`define IFM_SIZE 8'd200
+`define IFM_SIZE 8'd100
 `define OFM_SIZE (`IFM_SIZE-2)
 `define TILE_ROW (`OFM_SIZE/`TILE_RUN+1)
 `define TILE_COL (`OFM_SIZE/`TILE_LEN+1)

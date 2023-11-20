@@ -17,6 +17,7 @@ set rtl_vhdl_files {
 }
 
 set tb_verilog_files {
+    tb_test.sv
     tb_conv2d_3x3.sv
 }
 

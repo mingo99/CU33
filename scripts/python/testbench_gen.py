@@ -363,9 +363,9 @@ class ConvData:
 
 if __name__ == "__main__":
     setup_seed(1122334)
-    ifm_size = 200
-    chi = 8
-    cho = 8
+    ifm_size = 100
+    chi = 32
+    cho = 32
     ksize = 3
     stride = 1
     print(
@@ -373,7 +373,7 @@ if __name__ == "__main__":
     )
     test_data = ConvData(ifm_size, chi, cho, ksize, stride)
 
-    OUTDIR = "../../data"
+    OUTDIR = "../../data/exp"
     if not os.path.isdir(OUTDIR):
         os.makedirs(OUTDIR)
 

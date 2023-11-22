@@ -19,6 +19,13 @@ FILELIST := ../src/filelist.tcl
 # Directory log files are written to
 LOG_DIR := ./logs
 
+# Macro for simulation
+CHNOFTWIDTH := 1
+IFMSIZE := 20
+CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
+CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
+STRIDE := 0
+
 all: create_filelist com sim
 
 create_filelist:
@@ -26,11 +33,15 @@ create_filelist:
 
 com: make_log_dir	
 	$(VCS) +v2k -sverilog \
+	+define+CHN_OFT_WIDTH=$(CHNOFTWIDTH) \
+	+define+IFM_SIZE=$(IFM_SIZE) \
+	+define+STRIDE=$(STRIDE) \
 	-f sim_filelist.f \
 	-debug_access \
 	-$(TIMESCALE) \
 	-l $(LOG_DIR)/com.log \
 	-top $(TOP_LEVEL_MODULE) \
+	-j20 \
 
 sim:
 	time ./simv -l  $(LOG_DIR)/sim.log
@@ -70,8 +81,8 @@ open_dve :
 open_verdi:
 	verdi +v2k -sverilog -f sim_filelist.f -ssf ./sim_output_pluson.fsdb -sswr ./$(TOP_LEVEL_MODULE).rc &
 
+gen_tb: make_data_dir
+	@cd ../scripts/python && python testbench_gen.py $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1)))
+
 compare:
 	@cd ../scripts/python && python compare.py
-
-gen_tb: make_data_dir
-	@cd ../scripts/python && python testbench_gen.py

@@ -142,7 +142,7 @@ module tb_conv2d_3x3;
         start_conv = 0;
         cfg_ci     = `CHN_64;
         cfg_co     = `CHN_64;
-        cfg_stride = 0;
+        cfg_stride = `STRIDE;
         #10 rstn = 0;
         #10 rstn = 1;
 

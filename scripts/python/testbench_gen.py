@@ -1,6 +1,7 @@
 """
 Generate data of testbench
 """
+import argparse
 import os
 from collections import abc
 from itertools import repeat
@@ -361,16 +362,27 @@ class ConvData:
                 f.write("\n")
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
+    parser.add_argument("chi", default=2, type=int, help="input channel number")
+    parser.add_argument("cho", default=2, type=int, help="output channel number")
+    parser.add_argument("ksize", default=3, type=int, help="kernel size")
+    parser.add_argument("stride", default=1, type=int, help="conv stride")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    setup_seed(1122334)
-    ifm_size = 100
-    chi = 32
-    cho = 32
-    ksize = 3
-    stride = 1
+    args = get_args()
+    ifm_size = args.ifmsize
+    chi = args.chi
+    cho = args.cho
+    ksize = args.ksize
+    stride = args.stride
     print(
-        f"Generate data:\nCHI: {chi}\nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}"
+        f"Generate data:\nCHI: \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}"
     )
+    setup_seed(1122334)
     test_data = ConvData(ifm_size, chi, cho, ksize, stride)
 
     OUTDIR = "../../data/exp"

@@ -40,27 +40,30 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
         line_with_channel = np.concatenate(line_with_channel,axis=1)
         lines_with_channel.append(line_with_channel)
 
-    lines_with_channel = np.vstack(lines_with_channel)
-    print(lines_with_channel.shape)
+    lines_with_channel = np.array(lines_with_channel)
+    lines_with_channel = lines_with_channel.transpose(1,0,2)
 
-    return lines_no_channel
+    return lines_with_channel
 
 
 def get_act_ofm(ofm_size, cho, tile):
-    ofm_lines = np.zeros((ofm_size,ofm_size))
+    ofm = np.zeros((cho,ofm_size,ofm_size))
     for i in range(8):
         file = f"../../data/act/ofm_tile_lines_{i:0d}.txt"
-        ofm = read_ofm_line(file, ofm_size, cho, tile)
-        ofm_lines[i::8, :] = ofm
-    print(ofm_lines)
+        ofm_lines = read_ofm_line(file, ofm_size, cho, tile)
+        ofm[:,i::8, :] = ofm_lines
+
+    return ofm
 
 
-
-# with open("../../data/exp/ofm_dec_c32_h98_w98.txt") as f:
-#     data = re.sub(r"\n", "", f.read())
-#     ofm_exp = data.split(",")
-#     print(f"Length: { len(ofm_exp) }")
-#     print(ofm_exp[98])
+def get_exp_ofm():
+    with open("../../data/exp/ofm_dec_c2_h18_w18.txt") as f:
+        data = re.sub(r"\n", "", f.read())
+        ofm_lines = data.split(",").pop()
+        print(ofm_lines)
+    # ofm = np.array(ofm_lines).reshape((2,18,18))
+    ofm = np.array(ofm_lines)
+    print(ofm)
 
 
 def get_args():
@@ -75,3 +78,4 @@ def get_args():
 
 if __name__ == "__main__":
     get_act_ofm(18, 2, 16)
+    get_exp_ofm()

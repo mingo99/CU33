@@ -34,14 +34,14 @@ create_filelist:
 com: make_log_dir	
 	$(VCS) +v2k -sverilog \
 	+define+CHN_OFT_WIDTH=$(CHNOFTWIDTH) \
-	+define+IFM_SIZE=$(IFM_SIZE) \
+	+define+IFM_SIZE=$(IFMSIZE) \
 	+define+STRIDE=$(STRIDE) \
 	-f sim_filelist.f \
 	-debug_access \
 	-$(TIMESCALE) \
 	-l $(LOG_DIR)/com.log \
 	-top $(TOP_LEVEL_MODULE) \
-	-j20 \
+	-j20
 
 sim:
 	time ./simv -l  $(LOG_DIR)/sim.log

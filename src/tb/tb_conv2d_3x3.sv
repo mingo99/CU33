@@ -10,13 +10,14 @@ module tb_conv2d_3x3;
     reg        [      `CHN_WIDTH-1:0] cfg_ci;
     reg        [      `CHN_WIDTH-1:0] cfg_co;
     reg                               cfg_stride;
+    reg        [      `FMS_WIDTH-1:0] cfg_ifm_size;
 
     // data input
     reg        [`PEA33_IFM_WIDTH-1:0] ifm_group;
     reg        [`PEA33_WGT_WIDTH-1:0] wgt_group;
 
     // output of dut
-    wire sum_t                        sum        [`PEA33_COL];
+    wire sum_t                        sum          [`PEA33_COL];
     wire       [      `PEA33_COL-1:0] sum_valid;
     wire ifm_read, wgt_read, conv_done;
 
@@ -138,11 +139,13 @@ module tb_conv2d_3x3;
 
     /// reset and other control signal from master side
     initial begin
-        rstn       = 1;
-        start_conv = 0;
-        cfg_ci     = `CHN_64;
-        cfg_co     = `CHN_64;
-        cfg_stride = `STRIDE;
+        rstn         = 1;
+        start_conv   = 0;
+        cfg_ci       = `CHN_64;
+        cfg_co       = `CHN_64;
+        cfg_stride   = `STRIDE;
+        cfg_ifm_size = `IFM_SIZE;
+
         #10 rstn = 0;
         #10 rstn = 1;
 
@@ -197,11 +200,11 @@ module tb_conv2d_3x3;
         .cfg_ci      (cfg_ci),
         .cfg_co      (cfg_co),
         .cfg_stride  (cfg_stride),
-        .cfg_ifm_size(`IFM_SIZE),
+        .cfg_ifm_size(cfg_ifm_size),
         .start_conv  (start_conv),
         .ifm_group   (ifm_group),
         .wgt_group   (wgt_group),
-        .ifm_read    (ifm_read),
+        .ifm_read_out(ifm_read),
         .wgt_read    (wgt_read),
         .conv_done   (conv_done),
         .sum_valid   (sum_valid),

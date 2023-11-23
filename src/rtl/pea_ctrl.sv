@@ -1,4 +1,5 @@
 module pea_ctrl #(
+    parameter COL           = 8,
     parameter TILE_LEN      = 16,
     parameter CHN_WIDTH     = 4,
     parameter CHN_OFT_WIDTH = 6,
@@ -13,9 +14,11 @@ module pea_ctrl #(
     input  wire                 stride,
     input  wire [FMS_WIDTH-1:0] ifm_size,    // With padding
     input  wire                 start_conv,
-    output wire                 ifm_read,
+    output wire [      COL-1:0] ifm_read,
+    // output wire                 ifm_read,
     output wire                 wgt_read,
-    output wire                 pvalid,
+    output wire [      COL-1:0] pvalid,
+    // output wire                 pvalid,
     output wire                 ic_done,
     output wire                 oc_done,
     output wire                 conv_done
@@ -75,9 +78,6 @@ module pea_ctrl #(
             tc_col <= tc_col_nxt;
         end
     end
-
-    wire [7:0] row_mask;
-    assign row_mask = tile_row_last & (|tile_row_offset) ? (8'hff >> (8 - tile_row_offset)) : 8'hff;
 
     reg [PC_COL_WIDTH-1:0] pc_col;
     wire [PC_COL_WIDTH-1:0] pc_col_max, pc_col_nxt;
@@ -172,21 +172,32 @@ module pea_ctrl #(
         else first_calc <= first_calc_nxt;
     end
 
-    reg ifm_rd_msk_pre;
+    reg ifm_rd_col_msk_pre;
     always @(posedge clk or negedge rstn) begin
-        if (!rstn) ifm_rd_msk_pre <= 1'b1;
-        else if (ifm_rd_msk_pre)
-            ifm_rd_msk_pre <= (&pc_col_max) | ~((pc_col == (pc_col_max - 1) & cnt_valid));
-        else ifm_rd_msk_pre <= ic_done;
+        if (!rstn) ifm_rd_col_msk_pre <= 1'b1;
+        else if (ifm_rd_col_msk_pre)
+            ifm_rd_col_msk_pre <= (&pc_col_max) | ~((pc_col == (pc_col_max - 1) & cnt_valid));
+        else ifm_rd_col_msk_pre <= ic_done;
     end
 
-    wire ifm_rd_msk;
-    assign ifm_rd_msk = tile_col_last ? ifm_rd_msk_pre | ic_done : ifm_rd_msk_pre;
-    assign ifm_read   = (start_conv | (|curr_state[2:1])) & ifm_rd_msk;
-    assign wgt_read   = start_conv | (~conv_done & ic_done) | (|flush_stage[1:0]);
+    wire ifm_rd_col_msk;
+    assign ifm_rd_col_msk = tile_col_last ? ifm_rd_col_msk_pre | ic_done : ifm_rd_col_msk_pre;
+
+    wire ifm_read_single;
+    assign ifm_read_single = (start_conv | (|curr_state[2:1])) & ifm_rd_col_msk;
+
+    wire ifm_rd_row_msk_vld;
+    assign ifm_rd_row_msk_vld = ((tc_col==(tc_col_max-1))&tile_ver_done) | (tile_row_last & (|tile_row_offset));
+
+    wire [COL-1:0] ifm_rd_row_msk;
+    assign ifm_rd_row_msk = ifm_rd_row_msk_vld ? ({COL{1'b1}} >> (COL - tile_row_offset)) : {COL{1'b1}};
+    assign ifm_read = {COL{ifm_read_single}} & ifm_rd_row_msk;
+    // assign ifm_read  = (start_conv | (|curr_state[2:1])) & ifm_rd_msk;
+
+    assign wgt_read = start_conv | (~conv_done & ic_done) | (|flush_stage[1:0]);
 
     // PE data valid signal for different stride(1/2)
-    assign cnt_valid  = curr_state[2] | (curr_state[1] & (|flush_stage[4:2]));
+    assign cnt_valid = curr_state[2] | (curr_state[1] & (|flush_stage[4:2]));
 
     reg [2:0] pvalid_s1_reg;
     always @(posedge clk or negedge rstn) begin
@@ -206,23 +217,37 @@ module pea_ctrl #(
     wire pvalid_s2;
     assign pvalid_s2 = pvalid_s1_reg[2] & pvalid_s2_reg;
 
-    reg vld_msk_pre;
+    reg vld_col_msk_pre;
     always @(posedge clk or negedge rstn) begin
-        if (!rstn) vld_msk_pre <= 1'b1;
-        else if (vld_msk_pre) vld_msk_pre <= (&pc_col_max) | ~((pc_col == pc_col_max) & cnt_valid);
-        else vld_msk_pre <= ic_done;
+        if (!rstn) vld_col_msk_pre <= 1'b1;
+        else if (vld_col_msk_pre)
+            vld_col_msk_pre <= (&pc_col_max) | ~((pc_col == pc_col_max) & cnt_valid);
+        else vld_col_msk_pre <= ic_done;
     end
 
-    reg [2:0] vld_msk_reg;
+    reg [2:0] vld_col_msk_reg;
     always @(posedge clk or negedge rstn) begin
-        if (!rstn) vld_msk_reg <= 3'b111;
-        else vld_msk_reg <= {vld_msk_reg[1:0], vld_msk_pre};
+        if (!rstn) vld_col_msk_reg <= 3'b111;
+        else vld_col_msk_reg <= {vld_col_msk_reg[1:0], vld_col_msk_pre};
     end
 
-    wire pvalid_unmsk, vld_msk;
-    assign vld_msk = vld_msk_reg[2];
-    assign pvalid_unmsk = stride ? pvalid_s2 : pvalid_s1_reg[2];
-    assign pvalid = pvalid_unmsk & vld_msk;
+    wire pvalid_unmsk, vld_col_msk, pvalid_single;
+    assign vld_col_msk   = vld_col_msk_reg[2];
+    assign pvalid_unmsk  = stride ? pvalid_s2 : pvalid_s1_reg[2];
+    assign pvalid_single = pvalid_unmsk & vld_col_msk;
+
+    wire vld_row_msk_vld;
+    assign vld_row_msk_vld = tile_row_last & (|tile_row_offset);
+
+    reg [2:0] vld_row_msk_vld_reg;
+    always @(posedge clk or negedge rstn) begin
+        if (!rstn) vld_row_msk_vld_reg <= 'b0;
+        else vld_row_msk_vld_reg <= {vld_row_msk_vld_reg[1:0], vld_row_msk_vld};
+    end
+
+    wire [COL-1:0] vld_row_msk;
+    assign vld_row_msk = vld_row_msk_vld_reg[2] ? ({COL{1'b1}} >> (COL - tile_row_offset)) : {COL{1'b1}};
+    assign pvalid = {COL{pvalid_single}} & vld_row_msk;
 
     assign ic_done = pc_col_last & cnt_valid;
     assign oc_done = ic_last & ic_done;

@@ -1,19 +1,21 @@
 // `include "typedef.svh"
 
 module pea_3x3 #(
-    parameter int ROW       = 3,
-    parameter int COL       = 10,
-    parameter int WGT_WIDTH = 24,
-    parameter int IFM_WIDTH = 128,
-    parameter int OFM_WIDTH = 32,
-    parameter int RF_AWIDTH = 4
+    parameter ROW       = 3,
+    parameter COL       = 8,
+    parameter WGT_WIDTH = 24,
+    parameter IFM_WIDTH = 128,
+    parameter OFM_WIDTH = 32,
+    parameter RF_AWIDTH = 4
 ) (
     input wire                 clk,
     input wire                 rstn,
     input wire                 stride,
     input wire                 wgt_read,
-    input wire                 ifm_read,
-    input wire                 pvalid,
+    // input wire                 ifm_read,
+    // input wire                 pvalid,
+    input wire [      COL-1:0] ifm_read,
+    input wire [      COL-1:0] pvalid,
     input wire                 ic_done,
     input wire                 oc_done,
     input wire [WGT_WIDTH-1:0] wgt_group,
@@ -22,6 +24,9 @@ module pea_3x3 #(
     output wire  [COL-1:0] sum_valid,
     output sum_t           sum      [COL]
 );
+
+    wire [COL+ROW-1:0] ifm_read_exd;
+    assign ifm_read_exd = {ifm_read, {(ROW - 1) {1'b1}}};
 
     wire [7:0] ifm_buf0[ROW+COL-1];
     wire [7:0] ifm_buf1[ROW+COL-1];
@@ -62,7 +67,7 @@ module pea_3x3 #(
             rf_ifm u_rf_ifm (
                 .clk     (clk),
                 .rstn    (rstn),
-                .ifm_read(ifm_read),
+                .ifm_read(ifm_read_exd[i]),
                 .ifm_in  (ifm_group[i*8+:8]),
                 .ifm_buf0(ifm_buf0[i]),
                 .ifm_buf1(ifm_buf1[i]),
@@ -89,7 +94,7 @@ module pea_3x3 #(
             ) u_rf_psum (
                 .clk         (clk),
                 .rstn        (rstn),
-                .data_valid  (pvalid),
+                .data_valid  (pvalid[j]),
                 .ic_done     (ic_done),
                 .oc_done     (oc_done),
                 .pe0_data    (pe_data[j]),

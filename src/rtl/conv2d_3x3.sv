@@ -22,11 +22,11 @@ module conv2d_3x3 #(
     input wire [IFM_WIDTH-1:0] ifm_group,
     input wire [WGT_WIDTH-1:0] wgt_group,
 
-    output wire                 ifm_read,
+    output wire                 ifm_read_out,
     output wire                 wgt_read,
     output wire                 conv_done,
     output wire       [COL-1:0] sum_valid,
-    output wire sum_t           sum      [COL]
+    output wire sum_t           sum         [COL]
 );
 
     // Stage configuration parameters
@@ -59,9 +59,13 @@ module conv2d_3x3 #(
 
     ///==-------------------------------------------------------------------------------------==
 
-    wire pvalid, ic_done, oc_done;
+    // wire pvalid, ic_done, oc_done;
+    wire ic_done, oc_done;
+    wire [COL-1:0] pvalid, ifm_read;
+    assign ifm_read_out = |ifm_read;
 
     pea_ctrl #(
+        .COL          (COL),
         .TILE_LEN     (TILE_LEN),
         .CHN_WIDTH    (CHN_WIDTH),
         .CHN_OFT_WIDTH(CHN_OFT_WIDTH),

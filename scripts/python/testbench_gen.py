@@ -380,7 +380,7 @@ if __name__ == "__main__":
     ksize = args.ksize
     stride = args.stride
     print(
-        f"Generate data:\nCHI:{chi} \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}"
+        f"Generate data:\nCHI: {chi} \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}"
     )
     setup_seed(1122334)
     test_data = ConvData(ifm_size, chi, cho, ksize, stride)

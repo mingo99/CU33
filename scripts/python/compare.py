@@ -23,47 +23,59 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
         ]
 
         tile_last_with_chan = None
-        line_with_channel = []   
-        
-        oft = ofm_size%tile_len
+        line_with_channel = []
+
+        oft = ofm_size % tile_len
         if oft != 0:
             tile_last = line.pop()
-            tile_last_with_chan =  np.array([tile_last[i:i+oft] for i in range(0,len(tile_last),oft)])
+            tile_last_with_chan = np.array(
+                [tile_last[i : i + oft] for i in range(0, len(tile_last), oft)]
+            )
 
         for tile in line:
-            tile_with_chan = np.array([tile[i:i+tile_len] for i in range(0,len(tile),tile_len)])
+            tile_with_chan = np.array(
+                [tile[i : i + tile_len] for i in range(0, len(tile), tile_len)]
+            )
             line_with_channel.append(tile_with_chan)
 
         if oft != 0:
             line_with_channel.append(tile_last_with_chan)
 
-        line_with_channel = np.concatenate(line_with_channel,axis=1)
+        line_with_channel = np.concatenate(line_with_channel, axis=1)
         lines_with_channel.append(line_with_channel)
 
     lines_with_channel = np.array(lines_with_channel)
-    lines_with_channel = lines_with_channel.transpose(1,0,2)
+    lines_with_channel = lines_with_channel.transpose(1, 0, 2)
 
     return lines_with_channel
 
 
 def get_act_ofm(ofm_size, cho, tile):
-    ofm = np.zeros((cho,ofm_size,ofm_size))
+    ofm = np.zeros((cho, ofm_size, ofm_size))
+
+    print("Extracting actual ofm file: ")
     for i in range(8):
         file = f"../../data/act/ofm_tile_lines_{i:0d}.txt"
+        print(f"file: {file}")
         ofm_lines = read_ofm_line(file, ofm_size, cho, tile)
-        ofm[:,i::8, :] = ofm_lines
+        ofm[:, i::8, :] = ofm_lines
+
+    print("Extracting done.\n")
+
+    return ofm.astype(int)
+
+
+def get_exp_ofm(exp_file, cho, ofm_size):
+    print(f"Extracting expect ofm file:\nfile: {exp_file}")
+    with open(exp_file) as f:
+        data = re.sub(r"\n", "", f.read())
+        ofm_lines = data.split(",")
+        ofm_lines.pop()
+
+    ofm = np.array(ofm_lines).reshape((cho, ofm_size, ofm_size)).astype(int)
+    print("Extracting done.\n")
 
     return ofm
-
-
-def get_exp_ofm():
-    with open("../../data/exp/ofm_dec_c2_h18_w18.txt") as f:
-        data = re.sub(r"\n", "", f.read())
-        ofm_lines = data.split(",").pop()
-        print(ofm_lines)
-    # ofm = np.array(ofm_lines).reshape((2,18,18))
-    ofm = np.array(ofm_lines)
-    print(ofm)
 
 
 def get_args():
@@ -77,5 +89,20 @@ def get_args():
 
 
 if __name__ == "__main__":
-    get_act_ofm(18, 2, 16)
-    get_exp_ofm()
+    args = get_args()
+    ofm_size = (args.ifmsize - args.ksize) // args.stride + 1
+    act_ofm = get_act_ofm(ofm_size, args.cho, args.tile)
+
+    ofm_exp_file = (
+        f"../../data/exp/ofm_dec_c{args.cho:0d}_h{ofm_size:0d}_w{ofm_size:0d}.txt"
+    )
+    exp_ofm = get_exp_ofm(ofm_exp_file, args.cho, ofm_size)
+
+    print(f"Expect ofm array shape: {exp_ofm.shape}")
+    print(f"Actual ofm array shape: {act_ofm.shape}\n")
+
+    res_comp = np.array_equal(act_ofm, exp_ofm)
+    if res_comp:
+        print("Verification Passed!!!")
+    else:
+        print("Verification failed!!!")

@@ -20,8 +20,8 @@ FILELIST := ../src/filelist.tcl
 LOG_DIR := ./logs
 
 # Macro for simulation
-CHNOFTWIDTH := 1
-IFMSIZE := 20
+CHNOFTWIDTH := 6
+IFMSIZE := 202
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
 STRIDE := 0
@@ -41,7 +41,7 @@ com: make_log_dir
 	-$(TIMESCALE) \
 	-l $(LOG_DIR)/com.log \
 	-top $(TOP_LEVEL_MODULE) \
-	-j20
+	-j 20
 
 sim:
 	time ./simv -l  $(LOG_DIR)/sim.log
@@ -85,4 +85,4 @@ gen_tb: make_data_dir
 	@cd ../scripts/python && python testbench_gen.py $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1)))
 
 compare:
-	@cd ../scripts/python && python compare.py
+	@cd ../scripts/python && python compare.py 16 $(CHO) $(IFMSIZE) 3 $(shell echo $$(($(STRIDE) + 1)))

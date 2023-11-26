@@ -100,6 +100,8 @@ if __name__ == "__main__":
 
     print(f"Expect ofm array shape: {exp_ofm.shape}")
     print(f"Actual ofm array shape: {act_ofm.shape}\n")
+    print(f"Expect ofm array:\n{exp_ofm}")
+    print(f"Actual ofm array:\n{act_ofm}")
 
     res_comp = np.array_equal(act_ofm, exp_ofm)
     if res_comp:

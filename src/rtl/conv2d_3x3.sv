@@ -17,6 +17,7 @@ module conv2d_3x3 #(
     input wire [CHN_WIDTH-1:0] cfg_ci,
     input wire [CHN_WIDTH-1:0] cfg_co,
     input wire                 cfg_stride,
+    input wire                 cfg_group,
     input wire [FMS_WIDTH-1:0] cfg_ifm_size,
     input wire                 start_conv,
     input wire [IFM_WIDTH-1:0] ifm_group,
@@ -31,7 +32,7 @@ module conv2d_3x3 #(
 
     // Stage configuration parameters
     reg [5:0] chi_reg, cho_reg;
-    reg stride_reg;
+    reg stride_reg, group_reg;
     reg [FMS_WIDTH-1:0] ifm_size_reg;
 
     always @(posedge clk or negedge rstn) begin
@@ -39,22 +40,25 @@ module conv2d_3x3 #(
             chi_reg      <= 'b0;
             cho_reg      <= 'b0;
             stride_reg   <= 'b0;
+            group_reg    <= 'b0;
             ifm_size_reg <= 'b0;
         end else if (start_conv) begin
             chi_reg      <= cfg_ci;
             cho_reg      <= cfg_co;
             stride_reg   <= cfg_stride;
+            group_reg    <= cfg_group;
             ifm_size_reg <= cfg_ifm_size;
         end
     end
 
     wire [5:0] chi, cho;
-    wire stride;
+    wire stride, group;
     wire [FMS_WIDTH-1:0] ifm_size;
 
     assign chi      = start_conv ? cfg_ci : chi_reg;
     assign cho      = start_conv ? cfg_co : cho_reg;
     assign stride   = start_conv ? cfg_stride : stride_reg;
+    assign group    = start_conv ? cfg_group : group_reg;
     assign ifm_size = start_conv ? cfg_ifm_size : ifm_size_reg;
 
     ///==-------------------------------------------------------------------------------------==
@@ -78,6 +82,7 @@ module conv2d_3x3 #(
         .chi       (chi),
         .cho       (cho),
         .stride    (stride),
+        .group     (group),
         .ifm_size  (ifm_size),
         .start_conv(start_conv),
         .ifm_read  (ifm_read),

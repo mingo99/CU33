@@ -20,11 +20,12 @@ FILELIST := ../src/filelist.tcl
 LOG_DIR := ./logs
 
 # Macro for simulation
-CHNOFTWIDTH := 6
-IFMSIZE := 202
+CHNOFTWIDTH := 3
+IFMSIZE := 22
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
 STRIDE := 0
+GROUP := 1
 
 all: create_filelist com sim
 
@@ -36,6 +37,7 @@ com: make_log_dir
 	+define+CHN_OFT_WIDTH=$(CHNOFTWIDTH) \
 	+define+IFM_SIZE=$(IFMSIZE) \
 	+define+STRIDE=$(STRIDE) \
+	+define+GROUP=$(GROUP) \
 	-f sim_filelist.f \
 	-debug_access \
 	-$(TIMESCALE) \
@@ -82,7 +84,7 @@ open_verdi:
 	verdi +v2k -sverilog -f sim_filelist.f -ssf ./sim_output_pluson.fsdb -sswr ./$(TOP_LEVEL_MODULE).rc &
 
 gen_tb: make_data_dir
-	@cd ../scripts/python && python testbench_gen.py $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1)))
+	@cd ../scripts/python && python testbench_gen.py $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1))) $(GROUP)
 
 compare:
 	@cd ../scripts/python && python compare.py 16 $(CHO) $(IFMSIZE) 3 $(shell echo $$(($(STRIDE) + 1)))

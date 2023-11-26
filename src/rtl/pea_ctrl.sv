@@ -13,6 +13,7 @@ module pea_ctrl #(
     input  wire [CHN_WIDTH-1:0] cho,
     input  wire                 stride,
     input  wire [FMS_WIDTH-1:0] ifm_size,    // With padding
+    input  wire                 group,
     input  wire                 start_conv,
     output wire [      COL-1:0] ifm_read,
     // output wire                 ifm_read,
@@ -100,7 +101,7 @@ module pea_ctrl #(
     assign ic_cnt_nxt = ic_done ? (ic_last ? 'b0 : ic_cnt + 1'b1) : ic_cnt;
     assign oc_cnt_nxt = oc_done ? (oc_last ? 'b0 : oc_cnt + 1'b1) : oc_cnt;
 
-    assign ic_last = ic_cnt == ic_num;
+    assign ic_last = group | (ic_cnt == ic_num);
     assign oc_last = oc_cnt == oc_num;
 
     always @(posedge clk or negedge rstn) begin

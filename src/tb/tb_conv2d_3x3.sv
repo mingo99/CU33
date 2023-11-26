@@ -10,6 +10,7 @@ module tb_conv2d_3x3;
     reg        [      `CHN_WIDTH-1:0] cfg_ci;
     reg        [      `CHN_WIDTH-1:0] cfg_co;
     reg                               cfg_stride;
+    reg                               cfg_group;
     reg        [      `FMS_WIDTH-1:0] cfg_ifm_size;
 
     // data input
@@ -144,6 +145,7 @@ module tb_conv2d_3x3;
         cfg_ci       = `CHN_64;
         cfg_co       = `CHN_64;
         cfg_stride   = `STRIDE;
+        cfg_group    = `GROUP;
         cfg_ifm_size = `IFM_SIZE;
 
         #10 rstn = 0;
@@ -200,6 +202,7 @@ module tb_conv2d_3x3;
         .cfg_ci      (cfg_ci),
         .cfg_co      (cfg_co),
         .cfg_stride  (cfg_stride),
+        .cfg_group   (cfg_group),
         .cfg_ifm_size(cfg_ifm_size),
         .start_conv  (start_conv),
         .ifm_group   (ifm_group),

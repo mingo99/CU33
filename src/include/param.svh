@@ -25,6 +25,9 @@
 `define CHO (`CHN_64<<`CHN_OFT_WIDTH)
 `define IFM_SIZE 8'd20
 `define OFM_SIZE (`IFM_SIZE-2)
+`define STRIDE 1
+`define GROUP 0
+
 `define TILE_ROW (`OFM_SIZE/`TILE_RUN+1)
 `define TILE_COL (`OFM_SIZE/`TILE_LEN+1)
 `define IFM_LEN `TILE_ROW*`TILE_COL*`CHO*`CHI*(`PEA33_ROW+`PEA33_COL-1)*(`TILE_LEN+2)

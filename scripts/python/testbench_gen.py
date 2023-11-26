@@ -73,6 +73,10 @@ class ConvData:
     ) -> None:
         """Initial class"""
         ## Conv parameters
+        if groups > 1:
+            self.inchannels = 1
+        else:
+            self.inchannels = in_channels
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -144,7 +148,7 @@ class ConvData:
             weight = (
                 torch.rand(
                     self.out_channels,
-                    self.in_channels,
+                    self.inchannels,
                     self.kernel_size,
                     self.kernel_size,
                 )
@@ -155,7 +159,7 @@ class ConvData:
         else:
             weight = torch.ones(
                 self.out_channels,
-                self.in_channels,
+                self.inchannels,
                 self.kernel_size,
                 self.kernel_size,
             )
@@ -244,7 +248,7 @@ class ConvData:
             for _ in range(self.num_run):
                 for _ in range(self.num_tile):
                     for oc in range(self.out_channels):
-                        for ic in range(self.in_channels):
+                        for ic in range(self.inchannels):
                             for k in range(self.kernel_size):
                                 for p in self.weight_np[oc, ic, :, k]:
                                     s = (
@@ -346,7 +350,7 @@ class ConvData:
         )
         with open(filename, "w", encoding="utf-8") as f:
             for oc in range(self.out_channels):
-                for ic in range(self.in_channels):
+                for ic in range(self.inchannels):
                     for k in range(self.kernel_size):
                         for p in self.weight_np[oc, ic, k, :]:
                             s = (
@@ -369,6 +373,7 @@ def get_args():
     parser.add_argument("cho", default=2, type=int, help="output channel number")
     parser.add_argument("ksize", default=3, type=int, help="kernel size")
     parser.add_argument("stride", default=1, type=int, help="conv stride")
+    parser.add_argument("group", default=1, type=int, help="conv stride")
     return parser.parse_args()
 
 
@@ -379,11 +384,15 @@ if __name__ == "__main__":
     cho = args.cho
     ksize = args.ksize
     stride = args.stride
+    if args.group == 1:
+        groups = args.cho
+    else:
+        groups = 1
     print(
-        f"Generate data:\nCHI: {chi} \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}"
+        f"Generate data:\nCHI: {chi} \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}\nGroup: {groups}"
     )
     setup_seed(1122334)
-    test_data = ConvData(ifm_size, chi, cho, ksize, stride)
+    test_data = ConvData(ifm_size, chi, cho, ksize, stride, groups=groups)
 
     OUTDIR = "../../data/exp"
     if not os.path.isdir(OUTDIR):

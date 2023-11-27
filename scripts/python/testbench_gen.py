@@ -226,6 +226,8 @@ class ConvData:
                                     f.write(s)
                                 f.write("\n")
                         f.write("\n")
+                        if self.groups > 1:
+                            break
                     f.write("\n")
                 f.write("\n")
             f.write("\n")

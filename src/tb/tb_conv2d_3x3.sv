@@ -207,7 +207,7 @@ module tb_conv2d_3x3;
         .start_conv  (start_conv),
         .ifm_group   (ifm_group),
         .wgt_group   (wgt_group),
-        .ifm_read_out(ifm_read),
+        .ifm_read    (ifm_read),
         .wgt_read    (wgt_read),
         .conv_done   (conv_done),
         .sum_valid   (sum_valid),

@@ -43,6 +43,7 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
 
         line_with_channel = np.concatenate(line_with_channel, axis=1)
         lines_with_channel.append(line_with_channel)
+        # print(line_with_channel)
 
     lines_with_channel = np.array(lines_with_channel)
     lines_with_channel = lines_with_channel.transpose(1, 0, 2)
@@ -50,15 +51,17 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
     return lines_with_channel
 
 
-def get_act_ofm(ofm_size, cho, tile):
+def get_act_ofm(ofm_size, cho, tile, stride):
     ofm = np.zeros((cho, ofm_size, ofm_size))
 
+    valid_line_num = 8 // stride
+
     print("Extracting actual ofm file: ")
-    for i in range(8):
-        file = f"../../data/act/ofm_tile_lines_{i:0d}.txt"
+    for i in range(valid_line_num):
+        file = f"../../data/act/ofm_tile_lines_{i*stride:0d}.txt"
         print(f"file: {file}")
         ofm_lines = read_ofm_line(file, ofm_size, cho, tile)
-        ofm[:, i::8, :] = ofm_lines
+        ofm[:, i::valid_line_num, :] = ofm_lines
 
     print("Extracting done.\n")
 
@@ -91,7 +94,9 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
     ofm_size = (args.ifmsize - args.ksize) // args.stride + 1
-    act_ofm = get_act_ofm(ofm_size, args.cho, args.tile)
+    tile_len = args.tile // args.stride
+
+    act_ofm = get_act_ofm(ofm_size, args.cho, tile_len, args.stride)
 
     ofm_exp_file = (
         f"../../data/exp/ofm_dec_c{args.cho:0d}_h{ofm_size:0d}_w{ofm_size:0d}.txt"
@@ -100,11 +105,11 @@ if __name__ == "__main__":
 
     print(f"Expect ofm array shape: {exp_ofm.shape}")
     print(f"Actual ofm array shape: {act_ofm.shape}\n")
-    print(f"Expect ofm array:\n{exp_ofm}")
-    print(f"Actual ofm array:\n{act_ofm}")
+    # print(f"Expect ofm array:\n{exp_ofm}")
+    # print(f"Actual ofm array:\n{act_ofm}")
 
     res_comp = np.array_equal(act_ofm, exp_ofm)
     if res_comp:
-        print("Verification Passed!!!")
+        print("\033[32mVerification Passed!!!\033[0m")
     else:
-        print("Verification failed!!!")
+        print("\033[31mVerification failed!!!\033[0m")

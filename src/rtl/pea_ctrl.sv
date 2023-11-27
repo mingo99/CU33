@@ -15,8 +15,7 @@ module pea_ctrl #(
     input  wire [FMS_WIDTH-1:0] ifm_size,    // With padding
     input  wire                 group,
     input  wire                 start_conv,
-    output wire [      COL-1:0] ifm_read,
-    // output wire                 ifm_read,
+    output wire                 ifm_read,
     output wire                 wgt_read,
     output wire [      COL-1:0] pvalid,
     // output wire                 pvalid,
@@ -184,17 +183,7 @@ module pea_ctrl #(
     wire ifm_rd_col_msk;
     assign ifm_rd_col_msk = tile_col_last ? ifm_rd_col_msk_pre | ic_done : ifm_rd_col_msk_pre;
 
-    wire ifm_read_single;
-    assign ifm_read_single = (start_conv | (|curr_state[2:1])) & ifm_rd_col_msk;
-
-    wire ifm_rd_row_msk_vld;
-    assign ifm_rd_row_msk_vld = ((tc_col==(tc_col_max-1))&tile_ver_done) | (tile_row_last & (|tile_row_offset));
-
-    wire [COL-1:0] ifm_rd_row_msk;
-    assign ifm_rd_row_msk = ifm_rd_row_msk_vld ? ({COL{1'b1}} >> (COL - tile_row_offset)) : {COL{1'b1}};
-    assign ifm_read = {COL{ifm_read_single}} & ifm_rd_row_msk;
-    // assign ifm_read  = (start_conv | (|curr_state[2:1])) & ifm_rd_msk;
-
+    assign ifm_read = (start_conv | (|curr_state[2:1])) & ifm_rd_col_msk;
     assign wgt_read = start_conv | (~conv_done & ic_done) | (|flush_stage[1:0]);
 
     // PE data valid signal for different stride(1/2)

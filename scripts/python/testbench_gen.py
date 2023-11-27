@@ -369,6 +369,7 @@ class ConvData:
 
 
 def get_args():
+    """ Get args"""
     parser = argparse.ArgumentParser()
     parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
     parser.add_argument("chi", default=2, type=int, help="input channel number")

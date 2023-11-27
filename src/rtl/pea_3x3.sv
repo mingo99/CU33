@@ -12,9 +12,7 @@ module pea_3x3 #(
     input wire                 rstn,
     input wire                 stride,
     input wire                 wgt_read,
-    // input wire                 ifm_read,
-    // input wire                 pvalid,
-    input wire [      COL-1:0] ifm_read,
+    input wire                 ifm_read,
     input wire [      COL-1:0] pvalid,
     input wire                 ic_done,
     input wire                 oc_done,
@@ -25,9 +23,6 @@ module pea_3x3 #(
     output sum_t           sum      [COL]
 );
 
-    wire [COL+ROW-1:0] ifm_read_exd;
-    assign ifm_read_exd = {ifm_read, {(ROW - 1) {1'b1}}};
-
     wire [7:0] ifm_buf0[ROW+COL-1];
     wire [7:0] ifm_buf1[ROW+COL-1];
     wire [7:0] ifm_buf2[ROW+COL-1];
@@ -37,6 +32,10 @@ module pea_3x3 #(
     wire [7:0] wgt_buf2[ROW];
 
     wire [OFM_WIDTH-1:0] pe_data[ROW*COL];
+
+
+    wire [COL-1:0] result_valid;
+    assign sum_valid = stride ? result_valid & 8'h55 : result_valid;
 
     genvar row, col, i, j;
     generate
@@ -67,7 +66,7 @@ module pea_3x3 #(
             rf_ifm u_rf_ifm (
                 .clk     (clk),
                 .rstn    (rstn),
-                .ifm_read(ifm_read_exd[i]),
+                .ifm_read(ifm_read),
                 .ifm_in  (ifm_group[i*8+:8]),
                 .ifm_buf0(ifm_buf0[i]),
                 .ifm_buf1(ifm_buf1[i]),
@@ -100,7 +99,7 @@ module pea_3x3 #(
                 .pe0_data    (pe_data[j]),
                 .pe1_data    (pe_data[j+COL]),
                 .pe2_data    (pe_data[j+COL*2]),
-                .result_valid(sum_valid[j]),
+                .result_valid(result_valid[j]),
                 .result      (sum[j])
             );
         end

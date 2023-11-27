@@ -20,14 +20,14 @@ FILELIST := ../src/filelist.tcl
 LOG_DIR := ./logs
 
 # Macro for simulation
-CHNOFTWIDTH := 3
-IFMSIZE := 22
+CHNOFTWIDTH := 4
+IFMSIZE := 16 
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
-STRIDE := 0
-GROUP := 1
+STRIDE := 1
+GROUP := 0
 
-all: create_filelist com sim
+all: gen_tb create_filelist com sim compare
 
 create_filelist:
 	tclsh ../scripts/shell/create_sim_project.tcl sim_filelist.f $(FILELIST)
@@ -55,7 +55,7 @@ make_data_dir :
 	mkdir -p ../data/exp/
 	mkdir -p ../data/act/
 	
-clean: clean_com clean_sim clean_verdi clean_res clean_vivado 
+clean: clean_com clean_sim clean_verdi clean_res clean_vivado clean_data
 	rm -rf *.log logs/
 	rm -rf sim_filelist.f
 

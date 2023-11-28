@@ -21,11 +21,11 @@ LOG_DIR := ./logs
 
 # Macro for simulation
 CHNOFTWIDTH := 4
-IFMSIZE := 16 
+IFMSIZE := 30 
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
 STRIDE := 1
-GROUP := 0
+GROUP := 1
 
 all: gen_tb create_filelist com sim compare
 

@@ -21,11 +21,11 @@ LOG_DIR := ./logs
 
 # Macro for simulation
 CHNOFTWIDTH := 4
-IFMSIZE := 30 
+IFMSIZE := 100 
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
-STRIDE := 1
-GROUP := 1
+STRIDE := 0
+GROUP := 0
 
 all: gen_tb create_filelist com sim compare
 
@@ -43,10 +43,11 @@ com: make_log_dir
 	-$(TIMESCALE) \
 	-l $(LOG_DIR)/com.log \
 	-top $(TOP_LEVEL_MODULE) \
-	-j 20
+	-j 16 \
+	-fgp
 
 sim:
-	time ./simv -l  $(LOG_DIR)/sim.log
+	time ./simv -l $(LOG_DIR)/sim.log -fgp=num_threads:15
 
 make_log_dir :
 	mkdir -p $(LOG_DIR)

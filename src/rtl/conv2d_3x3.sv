@@ -10,7 +10,8 @@ module conv2d_3x3 #(
     parameter TILE_LEN      = 16,
     parameter CHN_WIDTH     = 4,
     parameter CHN_OFT_WIDTH = 6,
-    parameter FMS_WIDTH     = 8
+    parameter FMS_WIDTH     = 8,
+    parameter PC_ROW_WIDTH  = 3
 ) (
     input wire                 clk,
     input wire                 rstn,
@@ -74,7 +75,7 @@ module conv2d_3x3 #(
         .CHN_OFT_WIDTH(CHN_OFT_WIDTH),
         .FMS_WIDTH    (FMS_WIDTH),
         .PC_COL_WIDTH (RF_AWIDTH),
-        .PC_ROW_WIDTH (3)
+        .PC_ROW_WIDTH (PC_ROW_WIDTH)
     ) u_pea_ctrl (
         .clk       (clk),
         .rstn      (rstn),

@@ -3,53 +3,11 @@ Generate data of testbench
 """
 import argparse
 import os
-from collections import abc
-from itertools import repeat
-from typing import Tuple, Union
 
 import numpy as np
 import torch
 from torch import nn
-
-
-def _ntuple(n, name="parse"):
-    """Create tuple for x"""
-
-    def parse(x):
-        if isinstance(x, abc.Iterable):
-            return tuple(x)
-        return tuple(repeat(x, n))
-
-    parse.__name__ = name
-    return parse
-
-
-_pair = _ntuple(2, "_pair")
-
-Size2t = Union[int, Tuple[int, int]]
-
-
-def setup_seed(seed):
-    """Set random seed"""
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-
-def bin2hex(data_bin: str) -> str:
-    """Bin to hex"""
-    bit_h4 = data_bin[:4]
-    bit_l4 = data_bin[4:]
-    hex_h: int = 0
-    hex_l: int = 0
-    for i, b in enumerate(bit_h4):
-        if b == "1":
-            hex_h += 2 ** (3 - i)
-
-    for i, b in enumerate(bit_l4):
-        if b == "1":
-            hex_l += 2 ** (3 - i)
-
-    return hex(hex_h)[2:] + hex(hex_l)[2:]
+from utils import Size2t, _pair, bin2hex, setup_seed
 
 
 class ConvData:
@@ -69,7 +27,7 @@ class ConvData:
         bias=False,
         random=True,
         pea_size: Size2t = (3, 8),
-        tile_len: int = 16,
+        tile_col: int = 16,
     ) -> None:
         """Initial class"""
         ## Conv parameters
@@ -106,7 +64,7 @@ class ConvData:
         self.tonumpy()
 
         self.pea_size = _pair(pea_size)
-        self.tile_len = tile_len
+        self.tile_len = tile_col
         tile_offset = self.out_size[1] % (self.tile_len // self.stride)
         run_offset = self.out_size[1] % (self.pea_size[1] // self.stride)
         self.num_tile = (
@@ -196,6 +154,7 @@ class ConvData:
         )
 
         with open(filename, "w", encoding="utf-8") as f:
+            print(self.pea_size)
             for nr in range(self.num_run):
                 for nt in range(self.num_tile):
                     for _ in range(self.out_channels):
@@ -369,8 +328,10 @@ class ConvData:
 
 
 def get_args():
-    """ Get args"""
+    """Get args"""
     parser = argparse.ArgumentParser()
+    parser.add_argument("tile_row", default=8, type=int, help="tile row number")
+    parser.add_argument("tile_col", default=16, type=int, help="tile column number")
     parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
     parser.add_argument("chi", default=2, type=int, help="input channel number")
     parser.add_argument("cho", default=2, type=int, help="output channel number")
@@ -395,7 +356,16 @@ if __name__ == "__main__":
         f"Generate data:\nCHI: {chi} \nCHO: {cho}\nIFM size: {ifm_size}\nKernel size: {ksize}\nStride: {stride}\nGroup: {groups}"
     )
     setup_seed(1122334)
-    test_data = ConvData(ifm_size, chi, cho, ksize, stride, groups=groups)
+    test_data = ConvData(
+        in_size=ifm_size,
+        in_channels=chi,
+        out_channels=cho,
+        kernel_size=ksize,
+        stride=stride,
+        groups=groups,
+        pea_size=(3, args.tile_row),
+        tile_col=args.tile_col,
+    )
 
     OUTDIR = "../../data/exp"
     if not os.path.isdir(OUTDIR):

@@ -35,7 +35,7 @@ module pea_3x3 #(
 
 
     wire [COL-1:0] result_valid;
-    assign sum_valid = stride ? result_valid & 8'h55 : result_valid;
+    assign sum_valid = stride ? result_valid & {(COL >> 1) {2'b01}} : result_valid;
 
     genvar row, col, i, j;
     generate

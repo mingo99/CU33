@@ -5,6 +5,7 @@
 
 `define TILE_RUN `PEA33_COL
 `define TILE_LEN 16
+`define PC_ROW_WIDTH $clog2(`TILE_RUN)
 `define RF_AWIDTH $clog2(`TILE_LEN)
 
 `define CHN_64 1
@@ -14,8 +15,7 @@
 `define CHN_1024 16
 `define CHN_2048 32
 `define CHN_WIDTH 6
-// `define CHN_OFT_WIDTH 6
-`define CHN_OFT_WIDTH 1
+`define CHN_OFT_WIDTH 6
 
 `define FMS_WIDTH 8
 `define OFM_WIDTH 32

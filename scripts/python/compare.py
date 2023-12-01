@@ -1,7 +1,9 @@
 import argparse
+import os
 import re
 
 import numpy as np
+from utils import bin2hex
 
 
 def read_ofm_line(file, ofm_size, cho, tile_len):
@@ -46,15 +48,17 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
         # print(line_with_channel)
 
     lines_with_channel = np.array(lines_with_channel)
+    print(lines_with_channel.shape)
     lines_with_channel = lines_with_channel.transpose(1, 0, 2)
 
     return lines_with_channel
 
 
-def get_act_ofm(ofm_size, cho, tile, stride):
+def get_act_ofm(tile_row, ofm_size, cho, tile, stride):
     ofm = np.zeros((cho, ofm_size, ofm_size))
 
-    valid_line_num = 8 // stride
+    valid_line_num = tile_row // stride
+    print(valid_line_num)
 
     print("Extracting actual ofm file: ")
     for i in range(valid_line_num):
@@ -81,9 +85,40 @@ def get_exp_ofm(exp_file, cho, ofm_size):
     return ofm
 
 
+def write_ofm(ofm, outdir, radix: str = "bin"):
+    """
+    Param:
+        radix[str]:output radix, surpport `dec`, `bin`, `hex`
+    """
+    assert radix in [
+        "dec",
+        "bin",
+        "hex",
+    ], f"{radix} is not srpported, expected 'dec', 'bin', 'hex'"
+    ofm_shape = ofm.shape
+    filename = os.path.join(
+        outdir,
+        f"ofm_{radix}_c{ofm_shape[0]}_h{ofm_shape[1]}_w{ofm_shape[2]}.txt",
+    )
+    with open(filename, "w", encoding="utf-8") as f:
+        for oc in range(ofm_shape[0]):
+            for row in range(ofm_shape[1]):
+                for col in range(ofm_shape[2]):
+                    k = ofm[oc, row, col]
+                    s = str(k) + "," if radix == "dec" else np.binary_repr(k, 25) + " "
+                    if radix == "hex":
+                        s = bin2hex(s) + " "
+                    f.write(s)
+                    if (col + 1) % 16 == 0:
+                        f.write("\n")
+                f.write("\n")
+            f.write("\n")
+
+
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("tile", default=16, type=int, help="length of tile")
+    parser.add_argument("tile_row", default=8, type=int, help="tile row number")
+    parser.add_argument("tile_col", default=16, type=int, help="tile column number")
     parser.add_argument("cho", default=2, type=int, help="output channel number")
     parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
     parser.add_argument("ksize", default=3, type=int, help="kernel size")
@@ -94,9 +129,9 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
     ofm_size = (args.ifmsize - args.ksize) // args.stride + 1
-    tile_len = args.tile // args.stride
+    tile_len = args.tile_col // args.stride
 
-    act_ofm = get_act_ofm(ofm_size, args.cho, tile_len, args.stride)
+    act_ofm = get_act_ofm(args.tile_row, ofm_size, args.cho, tile_len, args.stride)
 
     ofm_exp_file = (
         f"../../data/exp/ofm_dec_c{args.cho:0d}_h{ofm_size:0d}_w{ofm_size:0d}.txt"
@@ -107,9 +142,13 @@ if __name__ == "__main__":
     print(f"Actual ofm array shape: {act_ofm.shape}\n")
     # print(f"Expect ofm array:\n{exp_ofm}")
     # print(f"Actual ofm array:\n{act_ofm}")
+    write_ofm(act_ofm, "../../data/act", radix="dec")
 
     res_comp = np.array_equal(act_ofm, exp_ofm)
     if res_comp:
         print("\033[32mVerification Passed!!!\033[0m")
     else:
         print("\033[31mVerification failed!!!\033[0m")
+        index = np.where(act_ofm != exp_ofm)[0][0]
+        print(f"Actual: {act_ofm[index]}")
+        print(f"Expect: {exp_ofm[index]}")

@@ -52,24 +52,17 @@ module tb_conv2d_3x3;
     end
 
     always @(*) begin
-        if (ifm_read) begin
-            ifm_group[7:0]   = ifm_in[ifm_cnt+0];
-            ifm_group[15:8]  = ifm_in[ifm_cnt+1];
-            ifm_group[23:16] = ifm_in[ifm_cnt+2];
-            ifm_group[31:24] = ifm_in[ifm_cnt+3];
-            ifm_group[39:32] = ifm_in[ifm_cnt+4];
-            ifm_group[47:40] = ifm_in[ifm_cnt+5];
-            ifm_group[55:48] = ifm_in[ifm_cnt+6];
-            ifm_group[63:56] = ifm_in[ifm_cnt+7];
-            ifm_group[71:64] = ifm_in[ifm_cnt+8];
-            ifm_group[79:72] = ifm_in[ifm_cnt+9];
-        end else ifm_group = 0;
+        if (ifm_read)
+            for (int i = 0; i < (`PEA33_COL + `PEA33_ROW - 1); ++i) begin
+                ifm_group[i*8+:8] = ifm_in[ifm_cnt+i];
+            end
+        else ifm_group = 0;
     end
 
     always @(posedge clk or negedge rstn) begin
         if (!rstn) ifm_cnt <= 0;
         else if (ifm_cnt == `IFM_LEN && !ifm_read) ifm_cnt <= 0;
-        else if (ifm_read) ifm_cnt <= ifm_cnt + 10;
+        else if (ifm_read) ifm_cnt <= ifm_cnt + (`PEA33_COL + `PEA33_ROW - 1);
         else ifm_cnt <= ifm_cnt;
     end
 
@@ -195,7 +188,8 @@ module tb_conv2d_3x3;
         .TILE_LEN     (`TILE_LEN),
         .CHN_WIDTH    (`CHN_WIDTH),
         .CHN_OFT_WIDTH(`CHN_OFT_WIDTH),
-        .FMS_WIDTH    (`FMS_WIDTH)
+        .FMS_WIDTH    (`FMS_WIDTH),
+        .PC_ROW_WIDTH (`PC_ROW_WIDTH)
     ) u_conv2d_3x3 (
         .clk         (clk),
         .rstn        (rstn),

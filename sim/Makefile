@@ -43,11 +43,10 @@ com: make_log_dir
 	-$(TIMESCALE) \
 	-l $(LOG_DIR)/com.log \
 	-top $(TOP_LEVEL_MODULE) \
-	-j 16 \
-	-fgp
+	-j 16
 
 sim:
-	time ./simv -l $(LOG_DIR)/sim.log -fgp=num_threads:15
+	time ./simv -l $(LOG_DIR)/sim.log
 
 make_log_dir :
 	mkdir -p $(LOG_DIR)

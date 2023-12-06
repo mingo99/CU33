@@ -165,13 +165,6 @@ module pea_ctrl #(
         endcase
     end
 
-    reg  first_calc;
-    wire first_calc_nxt = first_calc ? ~flush_stage[4] : start_conv;
-    always @(posedge clk or negedge rstn) begin
-        if (!rstn) first_calc <= 1'b0;
-        else first_calc <= first_calc_nxt;
-    end
-
     reg ifm_rd_col_msk_pre;
     always @(posedge clk or negedge rstn) begin
         if (!rstn) ifm_rd_col_msk_pre <= 1'b1;

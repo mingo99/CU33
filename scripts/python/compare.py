@@ -55,20 +55,22 @@ def read_ofm_line(file, ofm_size, cho, tile_len):
     return lines_with_channel
 
 
-def get_act_ofm(tile_row, ofm_size, cho, tile, stride):
+def get_act_ofm(tile_height, ofm_size, cho, tile_width, stride):
     ofm = np.zeros((cho, ofm_size, ofm_size))
 
-    if ofm_size // tile_row == 0:  # ofm_size < tile_row
-        valid_line_num = ofm_size % tile_row
+    tile_height = tile_height // stride
+
+    if ofm_size // tile_height == 0:  # ofm_size < tile_row
+        valid_line_num = ofm_size % tile_height
     else:
-        valid_line_num = tile_row
+        valid_line_num = tile_height
     print(valid_line_num)
 
     print("Extracting actual ofm file: ")
     for i in range(valid_line_num):
         file = f"../../data/act/ofm_tile_lines_{i*stride:0d}.txt"
         print(f"file: {file}")
-        ofm_lines = read_ofm_line(file, ofm_size, cho, tile)
+        ofm_lines = read_ofm_line(file, ofm_size, cho, tile_width)
         ofm[:, i::valid_line_num, :] = ofm_lines
 
     print("Extracting done.\n")
@@ -121,8 +123,8 @@ def write_ofm(ofm, outdir, radix: str = "bin"):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("tile_row", default=8, type=int, help="tile row number")
-    parser.add_argument("tile_col", default=16, type=int, help="tile column number")
+    parser.add_argument("tile_height", default=8, type=int, help="tile height")
+    parser.add_argument("tile_width", default=16, type=int, help="tile width")
     parser.add_argument("cho", default=2, type=int, help="output channel number")
     parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
     parser.add_argument("ksize", default=3, type=int, help="kernel size")
@@ -133,9 +135,9 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
     ofm_size = (args.ifmsize - args.ksize) // args.stride + 1
-    tile_len = args.tile_col // args.stride
+    tile_len = args.tile_width // args.stride
 
-    act_ofm = get_act_ofm(args.tile_row, ofm_size, args.cho, tile_len, args.stride)
+    act_ofm = get_act_ofm(args.tile_height, ofm_size, args.cho, tile_len, args.stride)
 
     ofm_exp_file = (
         f"../../data/exp/ofm_dec_c{args.cho:0d}_h{ofm_size:0d}_w{ofm_size:0d}.txt"

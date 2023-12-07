@@ -21,9 +21,9 @@ LOG_DIR := ./logs
 
 # Macro for simulation
 CHNOFTWIDTH := 3
-TILE_ROW := 16 
-TILE_COL := 16 
-IFMSIZE := 16 
+TILE_H := 8 
+TILE_W := 8 
+IFMSIZE := 52 
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
 STRIDE := 1
@@ -37,8 +37,8 @@ create_filelist:
 com: make_log_dir	
 	$(VCS) +v2k -sverilog \
 	+define+CHN_OFT_WIDTH=$(CHNOFTWIDTH) \
-	+define+PEA33_COL=$(TILE_ROW) \
-	+define+TILE_LEN=$(TILE_COL) \
+	+define+PEA33_COL=$(TILE_H) \
+	+define+TILE_LEN=$(TILE_W) \
 	+define+IFM_SIZE=$(IFMSIZE) \
 	+define+STRIDE=$(STRIDE) \
 	+define+GROUP=$(GROUP) \
@@ -88,7 +88,7 @@ open_verdi:
 	verdi +v2k -sverilog -f sim_filelist.f -ssf ./sim_output_pluson.fsdb -sswr ./$(TOP_LEVEL_MODULE).rc &
 
 gen_tb: make_data_dir
-	@cd ../scripts/python && python testbench_gen.py $(TILE_ROW) $(TILE_COL) $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1))) $(GROUP)
+	@cd ../scripts/python && python testbench_gen.py $(TILE_H) $(TILE_W) $(IFMSIZE) $(CHI) $(CHO) 3 $(shell echo $$(($(STRIDE) + 1))) $(GROUP)
 
 compare:
-	@cd ../scripts/python && python compare.py $(TILE_ROW) $(TILE_COL) $(CHO) $(IFMSIZE) 3 $(shell echo $$(($(STRIDE) + 1)))
+	@cd ../scripts/python && python compare.py $(TILE_H) $(TILE_W) $(CHO) $(IFMSIZE) 3 $(shell echo $$(($(STRIDE) + 1)))

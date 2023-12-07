@@ -27,7 +27,7 @@ class ConvData:
         bias=False,
         random=True,
         pea_size: Size2t = (3, 8),
-        tile_col: int = 16,
+        tile_width: int = 16,
     ) -> None:
         """Initial class"""
         ## Conv parameters
@@ -64,17 +64,17 @@ class ConvData:
         self.tonumpy()
 
         self.pea_size = _pair(pea_size)
-        self.tile_len = tile_col
-        tile_offset = self.out_size[1] % (self.tile_len // self.stride)
-        run_offset = self.out_size[1] % (self.pea_size[1] // self.stride)
-        self.num_tile = (
-            (self.out_size[1] // (self.tile_len // self.stride))
-            if tile_offset == 0
-            else (self.out_size[1] // (self.tile_len // self.stride) + 1)
+        self.tile_width = tile_width
+        tile_col_offset = self.out_size[1] % (self.tile_width // self.stride)
+        tile_row_offset = self.out_size[1] % (self.pea_size[1] // self.stride)
+        self.tile_col_num = (
+            (self.out_size[1] // (self.tile_width // self.stride))
+            if tile_col_offset == 0
+            else (self.out_size[1] // (self.tile_width // self.stride) + 1)
         )
-        self.num_run = (
+        self.tile_row_num = (
             (self.out_size[0] // (self.pea_size[1] // self.stride))
-            if run_offset == 0
+            if tile_row_offset == 0
             else (self.out_size[0] // (self.pea_size[1] // self.stride) + 1)
         )
 
@@ -155,12 +155,12 @@ class ConvData:
 
         with open(filename, "w", encoding="utf-8") as f:
             print(self.pea_size)
-            for nr in range(self.num_run):
-                for nt in range(self.num_tile):
+            for nr in range(self.tile_row_num):
+                for nt in range(self.tile_col_num):
                     for _ in range(self.out_channels):
                         for ic in range(self.in_channels):
-                            for j in range(self.tile_len + self.kernel_size - 1):
-                                col = nt * self.tile_len + j
+                            for j in range(self.tile_width + self.kernel_size - 1):
+                                col = nt * self.tile_width + j
                                 if col >= self.in_size[1]:
                                     break
 
@@ -206,8 +206,8 @@ class ConvData:
             f"weight_{radix}_co{self.out_channels}_ci{self.in_channels}_k{self.kernel_size}_k{self.kernel_size}.txt",
         )
         with open(filename, "w", encoding="utf-8") as f:
-            for _ in range(self.num_run):
-                for _ in range(self.num_tile):
+            for _ in range(self.tile_row_num):
+                for _ in range(self.tile_col_num):
                     for oc in range(self.out_channels):
                         for ic in range(self.inchannels):
                             for k in range(self.kernel_size):
@@ -330,8 +330,8 @@ class ConvData:
 def get_args():
     """Get args"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("tile_row", default=8, type=int, help="tile row number")
-    parser.add_argument("tile_col", default=16, type=int, help="tile column number")
+    parser.add_argument("tile_height", default=8, type=int, help="tile height")
+    parser.add_argument("tile_width", default=16, type=int, help="tile width")
     parser.add_argument("ifmsize", default=20, type=int, help="input feature map size")
     parser.add_argument("chi", default=2, type=int, help="input channel number")
     parser.add_argument("cho", default=2, type=int, help="output channel number")
@@ -363,8 +363,8 @@ if __name__ == "__main__":
         kernel_size=ksize,
         stride=stride,
         groups=groups,
-        pea_size=(3, args.tile_row),
-        tile_col=args.tile_col,
+        pea_size=(ksize, args.tile_height),
+        tile_width=args.tile_width,
     )
 
     OUTDIR = "../../data/exp"

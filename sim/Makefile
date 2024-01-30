@@ -26,8 +26,8 @@ TILE_W := 8
 IFMSIZE := 52 
 CHI := $(shell echo $$((2**$(CHNOFTWIDTH))))
 CHO := $(shell echo $$((2**$(CHNOFTWIDTH))))
-STRIDE := 1
-GROUP := 1
+STRIDE := 0
+GROUP := 0
 
 all: gen_tb create_filelist com sim compare
 
